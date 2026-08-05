@@ -1,0 +1,21 @@
+date,account_id,isin,name,asset_type,issuer,issuer_group,rating,exchange,listing_status,quantity,market_value
+2026-08-03,ACC001,SE0001000019,Volvo B,equity,AB Volvo,VOLVO,,XSTO,listed,500,132500
+2026-08-03,ACC001,SE0001000027,Atlas Copco A,equity,Atlas Copco AB,ATCO,,XSTO,listed,300,174000
+2026-08-03,ACC001,SE0001000092,Nordic Global Equity Fund,fund,Nordic Asset Mgmt,NAM,,,n/a,1200,288000
+2026-08-03,ACC001,SE0001000134,Kommuninvest 2031,bond,Kommuninvest i Sverige,KINV,AAA,XSTO,listed,100,1010000
+2026-08-03,ACC002,DK0001000034,Novo Nordisk B,equity,Novo Nordisk A/S,NOVO,,XCSE,listed,250,231250
+2026-08-03,ACC002,SE0001000100,Nordic Corporate Bond Fund,fund,Nordic Asset Mgmt,NAM,,,n/a,800,84800
+2026-08-03,ACC002,SE0001000142,Vattenfall 2029,bond,Vattenfall AB,VATT,A+,XSTO,listed,50,502500
+2026-08-03,ACC002,SE0001000084,Nordwind Marine AB,equity,Nordwind Marine AB,NRDW,,XSTO,listed,2000,61000
+2026-08-03,ACC003,FI0001000044,Nokia Oyj,equity,Nokia Oyj,NOKIA,,XHEL,listed,4000,168000
+2026-08-03,ACC003,NO0001000053,Equinor ASA,equity,Equinor ASA,EQNR,,XOSL,listed,600,201000
+2026-08-03,ACC003,SE0001000118,Vasa Index Sverige,fund,Vasa Fonder AB,VASA,,,n/a,2500,412500
+2026-08-03,ACC003,SE0001000159,Telia Company 2030,bond,Telia Company AB,TELIA,BBB,XSTO,listed,75,748500
+2026-08-03,ACC004,US0001000068,Microsoft Corp,equity,Microsoft Corporation,MSFT,,XNAS,listed,120,587000
+2026-08-03,ACC004,SE0001000126,Frontier Emerging Opportunities,fund,Frontier Capital,FRNT,,,n/a,900,108900
+2026-08-03,ACC004,SE0001000167,Saltsjo Property 2028,bond,Saltsjo Property AB,SALT,BBB-,XSTO,listed,60,597000
+2026-08-03,ACC004,SE0001000019,Volvo B,equity,AB Volvo,VOLVO,,XSTO,listed,800,212000
+2026-08-03,ACC005,GB0001000073,Unilever PLC,equity,Unilever PLC,ULVR,,XLON,listed,400,209600
+2026-08-03,ACC005,SE0001000092,Nordic Global Equity Fund,fund,Nordic Asset Mgmt,NAM,,,n/a,600,144000
+2026-08-03,ACC005,SE0001000134,Kommuninvest 2031,bond,Kommuninvest i Sverige,KINV,AAA,XSTO,listed,40,404000
+2026-08-03,ACC005,SE0001000084,Nordwind Marine AB,equity,Nordwind Marine AB,NRDW,,XSTO,listed,1500,45750

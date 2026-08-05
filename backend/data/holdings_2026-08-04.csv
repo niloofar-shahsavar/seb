@@ -1,0 +1,27 @@
+date,account_id,isin,name,asset_type,issuer,issuer_group,rating,exchange,listing_status,quantity,market_value
+2026-08-04,ACC001,SE0001000019,Volvo B,equity,AB Volvo,VOLVO,,XSTO,listed,500,133030
+2026-08-04,ACC001,SE0001000027,Atlas Copco A,equity,Atlas Copco AB,ATCO,,XSTO,listed,300,174696
+2026-08-04,ACC001,SE0001000092,Nordic Global Equity Fund,fund,Nordic Asset Mgmt,NAM,,,n/a,1200,289152
+2026-08-04,ACC001,SE0001000134,Kommuninvest 2031,bond,Kommuninvest i Sverige,KINV,AAA,XSTO,listed,100,1014040
+2026-08-04,ACC002,DK0001000034,Novo Nordisk B,equity,Novo Nordisk A/S,NOVO,,XCSE,listed,250,232175
+2026-08-04,ACC002,SE0001000100,Nordic Corporate Bond Fund,fund,Nordic Asset Mgmt,NAM,,,n/a,800,85139
+2026-08-04,ACC002,SE0001000142,Vattenfall 2029,bond,Vattenfall AB,VATT,A+,XSTO,listed,50,504510
+2026-08-04,ACC002,SE0001000084,Nordwind Marine AB,equity,Nordwind Marine AB,NRDW,,XSTO,listed,2000,61244
+2026-08-04,ACC003,NO0001000053,Equinor ASA,equity,Equinor ASA,EQNR,,XOSL,listed,600,201804
+2026-08-04,ACC003,SE0001000118,Vasa Index Sverige,fund,Vasa Fonder AB,VASA,,,n/a,2500,414150
+2026-08-04,ACC003,SE0001000159,Telia Company 2030,bond,Telia Company AB,TELIA,BBB,XSTO,listed,75,751494
+2026-08-04,ACC004,US0001000068,Microsoft Corp,equity,Microsoft Corporation,MSFT,,XNAS,listed,120,589348
+2026-08-04,ACC004,SE0001000126,Frontier Emerging Opportunities,fund,Frontier Capital,FRNT,,,n/a,900,109336
+2026-08-04,ACC004,SE0001000167,Saltsjo Property 2028,bond,Saltsjo Property AB,SALT,BBB-,XSTO,listed,60,599388
+2026-08-04,ACC004,SE0001000019,Volvo B,equity,AB Volvo,VOLVO,,XSTO,listed,800,212848
+2026-08-04,ACC005,SE0001000092,Nordic Global Equity Fund,fund,Nordic Asset Mgmt,NAM,,,n/a,600,144576
+2026-08-04,ACC005,SE0001000134,Kommuninvest 2031,bond,Kommuninvest i Sverige,KINV,AAA,XSTO,listed,40,405616
+2026-08-04,ACC005,SE0001000084,Nordwind Marine AB,equity,Nordwind Marine AB,NRDW,,XSTO,listed,1500,45933
+2026-08-04,ACC001,SE0001000175,Sandvik AB,equity,Sandvik AB,SAND,,XSTO,listed,400,96000
+2026-08-04,ACC002,SE0001000183,Nordic Real Return Fund,fund,Nordic Asset Mgmt,NAM,,,n/a,1000,105000
+2026-08-04,ACC002,SE0001000191,Baltic Logistics 2029,bond,Baltic Logistics AS,BALT,BB,XSTO,listed,40,388000
+2026-08-04,ACC003,KY0001000203,Cayman Absolute Return,fund,Cayman Alt Partners,CAP,,,n/a,500,262500
+2026-08-04,ACC004,SE0001000217,Hallands Vind 2032,bond,Hallands Vind AB,HVIND,NR,XSTO,listed,30,297000
+2026-08-04,ACC004,SE0001000225,Autocall Nordic 6Y,structured_product,Structura Issuance,STRU,,XSTO,listed,100,1000000
+2026-08-04,ACC005,SE0001000233,SEB A,equity,Skandinaviska Enskilda Banken AB,SEB,,XSTO,listed,700,112000
+2026-08-04,ACC005,SE0001000241,Sylvan Bioscience AB,equity,Sylvan Bioscience AB,SYLV,,,unlisted,1000,250000
