@@ -1,0 +1,5 @@
+event_id,date,isin,event_type,field,old_value,new_value,note
+EVT001,2026-08-04,SE0001000084,DELISTING,listing_status,listed,delisted,Relevant: changes an input to R2.
+EVT002,2026-08-04,SE0001000167,RATING_DOWNGRADE,rating,BBB-,BB+,Relevant: changes an input to R4.
+EVT003,2026-08-04,SE0001000126,FUND_REMOVED_FROM_APPROVED_LIST,approved_funds,on_list,removed,Relevant: changes an input to R3.
+EVT004,2026-08-04,SE0001000019,DIVIDEND,,,7.00,Not relevant: changes no input to any rule. Should be ignored.
