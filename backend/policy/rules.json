@@ -1,0 +1,16 @@
+{
+  "policy_version": "1.0",
+  "permitted_asset_types": ["equity", "fund", "bond"],
+  "minimum_rating": "BBB-",
+  "insurer_group": "SEB",
+  "unrated_values": ["", "NR"],
+  "rating_scale": [
+    "AAA",
+    "AA+", "AA", "AA-",
+    "A+", "A", "A-",
+    "BBB+", "BBB", "BBB-",
+    "BB+", "BB", "BB-",
+    "B+", "B", "B-",
+    "CCC", "CC", "C", "D"
+  ]
+}

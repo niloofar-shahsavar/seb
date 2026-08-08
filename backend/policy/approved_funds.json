@@ -1,0 +1,9 @@
+{
+  "approved_funds": [
+    { "isin": "SE0001000092", "name": "Nordic Global Equity Fund" },
+    { "isin": "SE0001000100", "name": "Nordic Corporate Bond Fund" },
+    { "isin": "SE0001000118", "name": "Vasa Index Sverige" },
+    { "isin": "SE0001000126", "name": "Frontier Emerging Opportunities" },
+    { "isin": "SE0001000183", "name": "Nordic Real Return Fund" }
+  ]
+}
