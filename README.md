@@ -5,3 +5,7 @@ The policy has two parts that must be stored separately:
 
 Settings — the values a compliance officer might change without a developer: which asset types are permitted, which venues are approved, which funds are approved, what the minimum rating is. These go in JSON.
 Logic — how to compare a rating against a minimum, how to decide a rule doesn't apply. This goes in Python.
+
+
+After understanding the data I set up the policy configuration before writing any rules. I put the rule settings in three JSON files under policy/: the general settings and rating scale in rules.json, the approved trading venues in approved_venues.json, and the approved fund list in approved_funds.json. I kept the settings in JSON and the actual comparisons in Python, because a compliance officer should be able to add an approved venue or fund without changing code, but I did not try to make the rules themselves configurable. I stored the rating scale as an ordered list so the rule can compare two positions in that list instead of having the scale hardcoded. I also made sure the fund that my corporate event removes is on the approved list to begin with, otherwise that test case would not prove anything.
+
