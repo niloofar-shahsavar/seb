@@ -1,11 +1,36 @@
-### Dependency issue
-1. I encountered a dependency conflict while setting up the frontend. I resolved it by using a compatible package version and committing `package-lock.json` to keep the dependency versions consistent across environments.
+AI Usage
+Dependency issue
 
-AI suggested possible fixes, but I confirmed the solution by testing the project locally.
+I had a dependency conflict while setting up the frontend. AI suggested some possible solutions, and I fixed it by using a compatible package version. I tested the solution locally and committed package-lock.json so the same versions are used in other environments.
 
+Data review
 
-2. I asked an AI model to read my two holdings files and my corporate events file and explain what the data actually contained, instead of only trusting my own description of it. I checked the row and ISIN counts myself and confirmed that the 8 new ISINs matched the 8 test cases I had planned. The review found three things I had not thought through: all my fund rows have an empty exchange and listing_status = n/a, so my listing rule has to return NOT_APPLICABLE for funds or every fund would fail; all my equity rows have an empty rating, so my rating rule has to return NOT_APPLICABLE for equities or every equity would end up as REVIEW; and my fund-removal event changes a policy file rather than a holdings column, so it is a different kind of change from a delisting or a downgrade. It also pointed out that the note column in my events file contains the answer in plain text, and that my code must decide relevance from the event type instead of reading that column. I agreed with all of these and will handle them when I write the rules.
+I asked AI to review my holdings and corporate events files and explain what the data contained. I checked the row counts and ISINs myself and confirmed that the 8 new ISINs matched my 8 planned test cases.
 
-3. I asked an AI model to help me decide what belongs in my policy JSON files and what belongs in Python. I checked the proposed fund list against my own holdings data line by line, which is how I confirmed that the fund my removal event targets has to be on the approved list from the start and that the Cayman fund has to be absent from it — otherwise two of my test cases would pass for the wrong reason. The model suggested storing the rating scale and the list of unrated values in JSON rather than in code, and I agreed because it means my rating rule stays one comparison and the whole scale is visible in one file. It also suggested adding a policy version field, which I decided to keep because it lets a stored result say which policy version it was judged against. 
+The review showed me some important cases I had missed. Funds should not be checked by the listing rule, because all my fund rows have an empty exchange and a listing status of n/a. Equities should not be checked by the rating rule, because all my equity rows have an empty rating. And some corporate events change policy data instead of holdings data, so they have to be handled differently.
 
-I asked an AI model to help me write my first rule function and to explain the order of the checks. I decided myself to keep pandas out of the rules file and pass each holding as a plain dictionary, which makes the rules testable with a hand-written example and avoids the clash between pandas' .isin() method and my column called isin. The model suggested using .get() with a default so that a missing column and an empty value both fall into the REVIEW branch, and building the object once at the end instead of returning from each branch — I kept both. It also pointed out that storing the normalised value in observed_value hides badly formatted input data, which I had not considered; I decided to keep the normalised value anyway because it is what the rule actually compared, but I now know it is a choice. Separately, the model gave me a credit rating scale for my policy file, and since that is a fact about the outside world rather than something in my data, I checked the investment-grade boundary against a rating agency's own description instead of trusting the model.
+I also noticed that the note column in my events file explains in plain text why each event matters. My code does not read that column and decides relevance from the event type instead, because otherwise my rules would just be copying the answer out of my own test data.
+
+Policy and rules
+
+I used AI to help decide what should be stored in JSON and what should stay in Python. I checked the suggested policy values against my own data and made sure they supported my test cases correctly.
+
+I decided to keep rule settings, such as the rating scale and approved funds, in JSON and keep the rule logic in Python. I also added a policy version so results can show which version of the policy was used.
+
+AI also helped me write and review the rule functions. I made several decisions myself, such as keeping pandas out of the rules, passing holdings as simple dictionaries, and checking important boundary cases like BBB- passing while BB+ fails. For external facts such as the investment grade boundary, I checked a rating agency source instead of only trusting AI.
+
+During one design discussion an AI suggested removing the NOT_APPLICABLE results to keep the output smaller. A second review pointed out that this would remove the proof that a rule actually ran. I agreed and kept all rule results, so I can always see the difference between a rule that did not apply and a rule that never ran.
+
+I tested all five rules against my 8 new holdings and confirmed that each result matched the test case I had planned.
+
+Data loading
+
+I used AI to help with the loading functions and understand the pandas settings. I learned that reading the CSV data as text is important, because pandas would otherwise turn empty ratings into NaN and could remove the leading zeros from my ISINs, which would break my fund lookups.
+
+I kept pandas only in the loading part of the project and converted the data to dictionaries before passing it to the rules. I also added validation for the policy configuration so an invalid setting causes a clear error instead of silently producing incorrect results.
+
+Finally, I checked the loaded row counts and unique ISIN counts against my own manual counts to confirm that the data was loaded correctly.
+
+Limitations
+
+Most AI suggestions were reasonable but too general for my data. The real problems only appeared when I compared a suggestion to my actual CSV files. AI also cannot confirm facts about the outside world, such as where the investment grade boundary sits, so I checked that against a rating agency source.

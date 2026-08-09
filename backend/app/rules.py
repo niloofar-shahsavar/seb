@@ -146,3 +146,113 @@ def check_r3(holding, policy):
         reason=reason,
     )
 
+
+def check_r4(holding, policy):
+    """R4 - bonds must have a credit rating at or above the policy minimum."""
+    scale = policy["rating_scale"]
+    minimum = str(policy["minimum_rating"]).strip().upper()
+    unrated = {str(v).strip().upper() for v in policy["unrated_values"]}
+    expected = f"{minimum} or better"
+
+    asset_type = str(holding.get("asset_type", "")).strip().lower()
+    rating = str(holding.get("rating", "")).strip().upper()
+
+    if asset_type != "bond":
+        status = "NOT_APPLICABLE"
+        observed_field = "asset_type"
+        observed_value = asset_type
+        expected = "—"
+        reason = "Credit rating rule applies to bonds only"
+
+    elif rating in unrated:
+        status = "REVIEW"
+        observed_field = "rating"
+        observed_value = rating
+        reason = "Bond has no usable credit rating, so the rule cannot be evaluated"
+
+    elif rating not in scale:
+        status = "REVIEW"
+        observed_field = "rating"
+        observed_value = rating
+        reason = "Bond rating is not recognised in the policy rating scale"
+
+    elif scale.index(rating) <= scale.index(minimum):
+        status = "PASS"
+        observed_field = "rating"
+        observed_value = rating
+        reason = "Bond rating meets the minimum permitted rating"
+
+    else:
+        status = "FAIL"
+        observed_field = "rating"
+        observed_value = rating
+        reason = "Bond rating is below the minimum permitted rating"
+
+    return RuleResult(
+        rule_id="R4",
+        rule_name="Minimum credit rating",
+        status=status,
+        observed_field=observed_field,
+        observed_value=observed_value,
+        expected=expected,
+        reason=reason,
+    )
+
+
+def check_r5(holding, policy):
+    """R5 - securities issued by the insurer's own group are not permitted."""
+    insurer_group = str(policy["insurer_group"]).strip().upper()
+    expected = f"issuer group must not be {insurer_group}"
+
+    issuer_group = str(holding.get("issuer_group", "")).strip().upper()
+
+    if issuer_group == "":
+        status = "REVIEW"
+        reason = "Issuer group is missing, so the rule cannot be evaluated"
+
+    elif issuer_group == insurer_group:
+        status = "FAIL"
+        reason = "Security is issued by the insurer's own group"
+
+    else:
+        status = "PASS"
+        reason = "Security is not issued by the insurer's own group"
+
+    return RuleResult(
+        rule_id="R5",
+        rule_name="Own-group restriction",
+        status=status,
+        observed_field="issuer_group",
+        observed_value=issuer_group,
+        expected=expected,
+        reason=reason,
+    )
+
+def evaluate_holding(holding, policy):
+    """Run all five rules against one holding and derive its overall status."""
+    results = [
+        check_r1(holding, policy),
+        check_r2(holding, policy),
+        check_r3(holding, policy),
+        check_r4(holding, policy),
+        check_r5(holding, policy),
+    ]
+
+    statuses = [r.status for r in results]
+
+    if "FAIL" in statuses:
+        overall = "REJECTED"
+    elif "REVIEW" in statuses:
+        overall = "REVIEW"
+    else:
+        overall = "APPROVED"
+
+    return {
+        "account_id": holding.get("account_id", ""),
+        "isin": holding.get("isin", ""),
+        "name": holding.get("name", ""),
+        "asset_type": holding.get("asset_type", ""),
+        "market_value": holding.get("market_value", ""),
+        "status": overall,
+        "rule_results": results,
+    }
