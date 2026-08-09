@@ -9,3 +9,15 @@ Logic — how to compare a rating against a minimum, how to decide a rule doesn'
 
 After understanding the data I set up the policy configuration before writing any rules. I put the rule settings in three JSON files under policy/: the general settings and rating scale in rules.json, the approved trading venues in approved_venues.json, and the approved fund list in approved_funds.json. I kept the settings in JSON and the actual comparisons in Python, because a compliance officer should be able to add an approved venue or fund without changing code, but I did not try to make the rules themselves configurable. I stored the rating scale as an ordered list so the rule can compare two positions in that list instead of having the scale hardcoded. I also made sure the fund that my corporate event removes is on the approved list to begin with, otherwise that test case would not prove anything.
 
+I wrote R1 first, which checks that the asset type is one of the three permitted types. I started here because R1 is the only rule that applies to every holding with no condition, and because the other rules all begin by checking the asset type anyway. I made the rule trim and lowercase the value before comparing, and I used .get() so that a missing column and an empty value both end up as REVIEW instead of crashing. I chose REVIEW rather than FAIL for a missing asset type, because not knowing what an instrument is is not the same as knowing it is forbidden. I also built the expected text from the policy list instead of writing it as a fixed string, so the alert stays correct if the permitted types change.
+
+
+known limitation: Adding a new permitted asset type requires reviewing which rules apply to that type. The current prototype does not automatically enforce a complete rule mapping for newly added asset classes
+
+I keep policy values, such as permitted asset types, in JSON while the rule logic stays in Python. This means compliance can change existing settings without changing the code.
+
+One limitation is that adding a new asset type may also require code changes. For example, if `structured_product` is added to the permitted list, R1 would pass it, but R2–R4 may not apply, so it could be approved without checks such as listing or rating.
+
+I also distinguish between missing and known-bad data. For example, an equity with `listing_status = "unlisted"` fails R2 because we know it is not listed, while an empty `listing_status` returns REVIEW because the information is missing rather than confirmed as invalid.
+
+In a production system, each asset type should be explicitly mapped to the rules that apply to it.
