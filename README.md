@@ -2,6 +2,9 @@
 
 A prototype monitoring tool for a Portfolio Bond (Swedish `depåförsäkring`). The customer chooses the investments, but the insurance company owns the assets, so it has to make sure every holding follows its investment policy.
 
+![Dashboard](docs/dashboard_1.png)
+*Summary and new holdings detected on 2026-08-04, each chosen to test a different rule.*
+
 ## What it does
 
 Two scenarios from the case, implemented end to end:
@@ -55,6 +58,9 @@ An event matters if and only if it changes an input used by one of R1 to R5.
 | EVT003 | Fund removed from approved list | the approved fund set | Yes, R3 |
 | EVT004 | Dividend | nothing a rule reads | No |
 
+![Corporate events](docs/dashboard_2.png)
+*Corporate events, including the dividend that is loaded but correctly ignored.*
+
 The dividend is still loaded and reported with the reason it was ignored. If it disappeared silently I could not tell the difference between correctly out of scope and a parser bug.
 
 My event file has a `note` column that explains each event in plain text. My code does not read it. Relevance comes from the event type through a mapping in `events.py`, because otherwise my engine would be copying the answer out of my own test data.
@@ -68,6 +74,9 @@ Only FAIL and REVIEW create alerts. Each one says which rule found it, which fie
 Each alert records whether it came from a new holding or a corporate event. The rule result is the same, but a new holding that fails is a purchase to block while an existing one is a remediation case.
 
 Alerts are sorted with breaches first and then by largest position. Market value affects ordering only, never the decision.
+
+![Alerts](docs/alerts.png)
+*Every alert names the rule, the value that caused it, and the suggested action.*
 
 ## Results for 2026-08-04
 
@@ -92,7 +101,7 @@ The eight new holdings, each chosen to test one rule:
 | SEB A | REJECTED | R5, own group issuer |
 | Sylvan Bioscience AB | REJECTED | R2, not listed |
 
-I wrote these down before implementing anything, so they check my code rather than describe it.
+I wrote these down before implementing anything, so they check my code rather than describe it. They are now the integration tests in `backend/tests/`.
 
 Before the events are applied, 6 holdings are not approved and all 6 are new. After the events, 10 are. The four extra are Nordwind Marine in two accounts (delisted), Saltsjo Property (downgraded) and Frontier Emerging Opportunities (fund removed). Nobody bought anything to cause them, and I wrote no new compliance logic to find them. The same five rules ran again against changed data.
 
@@ -136,13 +145,26 @@ All five rules are combined in one shared `evaluate_holding()`. New investments,
 
 ## Running the project
 
+Backend:
+
 ```bash
 cd backend
-python3 -m venv .venv
+uv venv --python 3.12
 source .venv/bin/activate
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
+
+`requirements.txt` is a normal pip file, so `python3 -m venv .venv` and `pip install -r requirements.txt` work the same way. I used `uv` because `ensurepip` was broken on my machine.
+
+Tests:
+
+```bash
+cd backend
+pytest
+```
+
+Frontend:
 
 ```bash
 cd frontend
@@ -152,18 +174,20 @@ npm run dev
 
 Backend on port 8000, frontend on 5173. CORS allows the frontend port.
 
-I could not create a virtual environment with `python3 -m venv` on my machine because `ensurepip` was failing, so I used `uv` instead. `requirements.txt` is a normal pip file and works with the commands above.
-
 ## Structure
 
 ```
-backend/app/
-├── main.py       FastAPI endpoints
-├── loaders.py    read CSV and JSON
-├── rules.py      R1 to R5 and evaluate_holding
-├── events.py     apply corporate events
-├── alerts.py     findings to alerts
-└── pipeline.py   coordinate the daily run
+backend/
+├── app/
+│   ├── main.py       FastAPI endpoints
+│   ├── loaders.py    read CSV and JSON
+│   ├── rules.py      R1 to R5 and evaluate_holding
+│   ├── events.py     apply corporate events
+│   ├── alerts.py     findings to alerts
+│   └── pipeline.py   coordinate the daily run
+├── data/             holdings snapshots and corporate events
+├── policy/           rule settings, approved venues, approved funds
+└── tests/            rule tests and the eight expected results
 ```
 
 No database, repository classes or dependency injection. The data is three CSV files and three JSON files, and those layers would have made the project harder to explain without making it work better.
