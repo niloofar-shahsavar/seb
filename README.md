@@ -1,28 +1,173 @@
-I started by looking at the data I had already created before writing any code. I have two end-of-day holdings snapshots, one for 2026-08-03 and one for 2026-08-04, and one file with four corporate events. A snapshot shows what each account held on that date, not what was bought, so I need two days to be able to see what is new. I decided that a holding is new when its ISIN has not been seen in any account on any earlier day, because eligibility depends on the instrument and the policy and not on which customer bought it. When I compared the two files I found 8 new ISINs and 2 instruments that had been sold, which matched what I expected.
+# Portfolio Bond Compliance Monitoring
 
+A prototype monitoring tool for a Portfolio Bond (Swedish `depåförsäkring`). The customer chooses the investments, but the insurance company owns the assets, so it has to make sure every holding follows its investment policy.
 
-The policy has two parts that must be stored separately:
+## What it does
 
-Settings — the values a compliance officer might change without a developer: which asset types are permitted, which venues are approved, which funds are approved, what the minimum rating is. These go in JSON.
-Logic — how to compare a rating against a minimum, how to decide a rule doesn't apply. This goes in Python.
+Two scenarios from the case, implemented end to end:
 
+1. **New investment detected, then eligibility check**
+2. **Corporate event, then revalidation**
 
-After understanding the data I set up the policy configuration before writing any rules. I put the rule settings in three JSON files under policy/: the general settings and rating scale in rules.json, the approved trading venues in approved_venues.json, and the approved fund list in approved_funds.json. I kept the settings in JSON and the actual comparisons in Python, because a compliance officer should be able to add an approved venue or fund without changing code, but I did not try to make the rules themselves configurable. I stored the rating scale as an ordered list so the rule can compare two positions in that list instead of having the scale hardcoded. I also made sure the fund that my corporate event removes is on the approved list to begin with, otherwise that test case would not prove anything.
+Portfolio level rules, such as a limit on one issuer, are out of scope. They need to add up several holdings, which is a different type of rule from the per holding rules here.
 
-I wrote R1 first, which checks that the asset type is one of the three permitted types. I started here because R1 is the only rule that applies to every holding with no condition, and because the other rules all begin by checking the asset type anyway. I made the rule trim and lowercase the value before comparing, and I used .get() so that a missing column and an empty value both end up as REVIEW instead of crashing. I chose REVIEW rather than FAIL for a missing asset type, because not knowing what an instrument is is not the same as knowing it is forbidden. I also built the expected text from the policy list instead of writing it as a fixed string, so the alert stays correct if the permitted types change.
+## The data
 
+Synthetic files in `backend/data/`.
 
-known limitation: Adding a new permitted asset type requires reviewing which rules apply to that type. The current prototype does not automatically enforce a complete rule mapping for newly added asset classes
+| File | Rows | Unique ISINs |
+| --- | --- | --- |
+| holdings_2026-08-03.csv | 20 | 16 |
+| holdings_2026-08-04.csv | 26 | 22 |
 
-I keep policy values, such as permitted asset types, in JSON while the rule logic stays in Python. This means compliance can change existing settings without changing the code.
+A snapshot shows what each account held at the end of one day. It is not a list of what was bought. I need two days because "new" is a comparison, so one snapshot on its own cannot tell me what is new.
 
-One limitation is that adding a new asset type may also require code changes. For example, if `structured_product` is added to the permitted list, R1 would pass it, but R2–R4 may not apply, so it could be approved without checks such as listing or rating.
+`corporate_events.csv` has four events. Three change something the rules use, one does not.
 
-I also distinguish between missing and known-bad data. For example, an equity with `listing_status = "unlisted"` fails R2 because we know it is not listed, while an empty `listing_status` returns REVIEW because the information is missing rather than confirmed as invalid.
+## Monitoring rules
 
-In a production system, each asset type should be explicitly mapped to the rules that apply to it.
+**A holding is new** when its ISIN has never appeared in any account on any earlier day. I detect newness per ISIN and not per account, because eligibility depends on the instrument and the policy, not on which customer bought it.
 
-I finished the rules module by adding R4 for the minimum credit rating, R5 for the own-group restriction, and the shared evaluate_holding function. For R4 I compared the positions of the two ratings in an ordered scale from my policy file instead of comparing the rating strings directly, because text comparison would give the wrong order. I used "at or better than" so that a bond rated exactly at the minimum still passes, and I added a branch that returns REVIEW for a rating that is not in my scale at all, so that one unexpected value cannot crash the whole daily run. evaluate_holding runs all five rules and turns them into one status, where any FAIL makes the holding REJECTED, otherwise any REVIEW makes it REVIEW, and NOT_APPLICABLE never changes the outcome. I kept every rule result including the ones that did not apply, so I can always tell the difference between a rule that stood down and a rule that never ran.
+**The daily run has two passes.** Pass 1 finds new ISINs. Pass 2 revalidates every holding, new and old. The second pass is what makes this continuous monitoring instead of only a purchase checker, because something that was fine yesterday can become non compliant today without anyone buying anything.
 
+**The five policy rules:**
 
-After the rules worked I wrote the loaders, which are the only part of my backend that reads files. I read all the CSV files as text with keep_default_na=False so that empty cells stay as empty strings instead of becoming NaN, and so that ISINs keep their leading zeros, and then I convert only quantity and market value into numbers myself. The loaders turn each row into a plain dictionary, which means my rules never see a pandas dataframe and can be tested with a hand-written example. I load all the holdings files with a wildcard and sort them by filename, which also sorts them by date because the dates are written year-month-day, so I can add another snapshot without changing any code. I also made the policy loader stop with an error if the minimum rating is not a value in my rating scale, because a broken policy file should stop the run rather than let everything pass silently.
+| Rule | Checks | Applies to |
+| --- | --- | --- |
+| R1 | Asset type is equity, fund or bond | all |
+| R2 | Listed and on an approved venue | equities, bonds |
+| R3 | Fund is on the approved fund list | funds |
+| R4 | Bond rating is BBB- or better | bonds |
+| R5 | Issuer is not in the insurer's own group | all |
+
+**Each rule returns** PASS, FAIL, REVIEW or NOT_APPLICABLE. Any FAIL makes the holding REJECTED. No FAIL but a REVIEW makes it REVIEW. Otherwise APPROVED. NOT_APPLICABLE never changes the status and never creates an alert, but I keep it anyway so I can see the difference between a rule that stood down and a rule that never ran.
+
+**FAIL and REVIEW are not the same.** FAIL is a statement about the holding, REVIEW is a statement about my data. An equity marked `unlisted` fails R2 because the data tells me it is not listed. An equity with an empty listing status returns REVIEW, because a gap in my feed should not become an accusation against the asset.
+
+## Corporate events
+
+An event matters if and only if it changes an input used by one of R1 to R5.
+
+| Event | Type | Changes | Relevant |
+| --- | --- | --- | --- |
+| EVT001 | Delisting | listing status | Yes, R2 |
+| EVT002 | Rating downgrade | rating, BBB- to BB+ | Yes, R4 |
+| EVT003 | Fund removed from approved list | the approved fund set | Yes, R3 |
+| EVT004 | Dividend | nothing a rule reads | No |
+
+The dividend is still loaded and reported with the reason it was ignored. If it disappeared silently I could not tell the difference between correctly out of scope and a parser bug.
+
+My event file has a `note` column that explains each event in plain text. My code does not read it. Relevance comes from the event type through a mapping in `events.py`, because otherwise my engine would be copying the answer out of my own test data.
+
+Events never decide compliance. They change the data, and then the same five rules run again. Nothing is written back to my CSV or JSON files, so running the same data twice gives the same result.
+
+## Alerts
+
+Only FAIL and REVIEW create alerts. Each one says which rule found it, which field and value caused it, what the policy expected, and what a person should do about it. Suggested actions are recommendations, never automatic decisions.
+
+Each alert records whether it came from a new holding or a corporate event. The rule result is the same, but a new holding that fails is a purchase to block while an existing one is a remediation case.
+
+Alerts are sorted with breaches first and then by largest position. Market value affects ordering only, never the decision.
+
+## Results for 2026-08-04
+
+| Metric | Value |
+| --- | --- |
+| Holdings | 26 |
+| New ISINs | 8 |
+| Approved / Review / Rejected | 16 / 1 / 9 |
+| Alerts | 10 |
+| Events applied / ignored | 3 / 1 |
+
+The eight new holdings, each chosen to test one rule:
+
+| Holding | Result | Reason |
+| --- | --- | --- |
+| Sandvik AB | APPROVED | permitted listed equity |
+| Nordic Real Return Fund | APPROVED | fund is approved |
+| Baltic Logistics 2029 | REJECTED | R4, rating BB |
+| Cayman Absolute Return | REJECTED | R3, fund not approved |
+| Hallands Vind 2032 | REVIEW | R4, no usable rating |
+| Autocall Nordic 6Y | REJECTED | R1, structured product |
+| SEB A | REJECTED | R5, own group issuer |
+| Sylvan Bioscience AB | REJECTED | R2, not listed |
+
+I wrote these down before implementing anything, so they check my code rather than describe it.
+
+Before the events are applied, 6 holdings are not approved and all 6 are new. After the events, 10 are. The four extra are Nordwind Marine in two accounts (delisted), Saltsjo Property (downgraded) and Frontier Emerging Opportunities (fund removed). Nobody bought anything to cause them, and I wrote no new compliance logic to find them. The same five rules ran again against changed data.
+
+## How it is built
+
+**Policy configuration.** Rule settings live in three JSON files under `policy/`, rule logic lives in Python. A compliance officer can add an approved venue or fund without touching code. I did not make the rules themselves configurable, because that would turn my JSON into a small programming language. The rating scale is an ordered list, so R4 compares two positions in that list instead of comparing text, which would give alphabetical order rather than credit quality order.
+
+**Rules.** Each rule takes one holding as a plain dictionary and returns a result object holding the rule id, the status, the field it looked at, the value it found, what was expected and a short reason. The alert text is built from those fields, which is why an alert can explain itself.
+
+R2, R3 and R4 check the asset type first. This matters in my data: every fund row has an empty exchange, so without that check every fund would fail the listing rule, and every equity row has an empty rating, so every equity would end up as REVIEW.
+
+All five rules are combined in one shared `evaluate_holding()`. New investments, event affected holdings and daily monitoring all use it, so the same holding always gets the same result from the same data and policy.
+
+**Loaders.** The only part that reads files. Everything is read as text so empty cells stay empty instead of becoming NaN and ISINs keep their leading zeros. Each row becomes a plain dictionary, so my rules never see a dataframe. The policy loader stops with an error if the minimum rating is not in the rating scale, because a typo there would either fail every bond or pass every bond, and the second one would be invisible.
+
+**Pipeline.** Coordinates the daily run and packages the result. It contains no compliance logic.
+
+**API.** `GET /api/daily-run` returns the whole run. `main.py` calls the pipeline and returns the result.
+
+**Dashboard.** One screen: summary tiles, new holdings, corporate events including the ignored dividend, and the alerts table. Uses the SEB Green colour tokens and typeface.
+
+## Assumptions
+
+1. One end of day snapshot per business day, assumed complete
+2. Holdings are positions, not transactions
+3. One simplified rating scale
+4. Reference data comes from local synthetic files
+5. Rules are evaluated per holding
+6. Concentration rules are out of scope
+7. Past results are not rewritten when something changes today
+8. Market values are SEK
+9. Quantity and market value are not used by any rule, only to sort alerts
+
+## Known limitations
+
+**Adding a new asset type needs a code change.** If `structured_product` were added to the permitted list, R1 would pass it but R2, R3 and R4 would all return NOT_APPLICABLE, so it could be approved with no listing or rating check. Every asset type should be explicitly mapped to the rules that apply to it. The configuration split is safe for making the policy stricter but not for widening it.
+
+**A re bought instrument is not new again.** Mitigated by the daily revalidation pass.
+
+**Events are applied without checking the old value** matches what the holding currently has.
+
+## Running the project
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Backend on port 8000, frontend on 5173. CORS allows the frontend port.
+
+I could not create a virtual environment with `python3 -m venv` on my machine because `ensurepip` was failing, so I used `uv` instead. `requirements.txt` is a normal pip file and works with the commands above.
+
+## Structure
+
+```
+backend/app/
+├── main.py       FastAPI endpoints
+├── loaders.py    read CSV and JSON
+├── rules.py      R1 to R5 and evaluate_holding
+├── events.py     apply corporate events
+├── alerts.py     findings to alerts
+└── pipeline.py   coordinate the daily run
+```
+
+No database, repository classes or dependency injection. The data is three CSV files and three JSON files, and those layers would have made the project harder to explain without making it work better.
+
+## AI usage
+
+See [AI_USAGE.md](AI_USAGE.md).
